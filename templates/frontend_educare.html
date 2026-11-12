@@ -1,0 +1,2100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduCare - Teacher Well-Being Support</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+        }
+
+        .nav-item {
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #eef2ff;
+        }
+
+        .nav-item.active {
+            background: #e0e7ff;
+            color: #4338ca;
+            font-weight: bold;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .risk-low {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .risk-moderate {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .risk-high {
+            background: #ffe4e6;
+            color: #be123c;
+        }
+
+        .breathing-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: #6366f1;
+            margin: auto;
+            animation: breathe 8s infinite ease-in-out;
+        }
+
+        @keyframes breathe {
+            0% {
+                transform: scale(0.7);
+            }
+
+            50% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0.7);
+            }
+        }
+
+        input[type="range"] {
+            accent-color: #4f46e5;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="flex">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar w-64 bg-white shadow-lg fixed left-0 top-0">
+
+        <div class="p-6 border-b">
+            <h1 class="text-2xl font-bold text-indigo-600">EduCare</h1>
+            <p class="text-sm text-gray-500">Teacher Well-Being Support</p>
+        </div>
+
+        <nav class="p-4 space-y-2">
+
+            <div class="nav-item active p-3 rounded-lg" onclick="showPage('dashboard', this)">
+                🏠 Dashboard
+            </div>
+
+            <div class="nav-item p-3 rounded-lg" onclick="showPage('checkin', this)">
+                📝 Daily Check-In
+            </div>
+
+            <div class="nav-item p-3 rounded-lg" onclick="showPage('history', this)">
+                📊 My History
+            </div>
+
+            <div class="nav-item p-3 rounded-lg" onclick="showPage('wellness', this)">
+                🌿 Wellness Hub
+            </div>
+
+            <div class="nav-item p-3 rounded-lg" onclick="showPage('notifications', this)">
+                🔔 Notifications
+            </div>
+
+            <div class="nav-item p-3 rounded-lg" onclick="showPage('admin', this)">
+                👨‍💼 Admin Analytics
+            </div>
+
+        </nav>
+
+        <div class="absolute bottom-0 p-4 w-full border-t bg-white">
+            <div class="flex items-center justify-between mb-2">
+                <div class="truncate">
+                    <p id="sidebarTeacherName" class="font-bold text-gray-800 text-sm truncate">
+                        {{ current_user.name if current_user else 'Gauravi Gupta' }}
+                    </p>
+                    <p id="sidebarTeacherDept" class="text-xs text-indigo-600 font-medium truncate">
+                        {{ current_user.department if current_user else 'Science' }} • <span id="sidebarTeacherId">{{ current_user.teacher_id if current_user else 'T-101' }}</span>
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button
+                    type="button"
+                    onclick="openAuthModal('login')"
+                    class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-1.5 px-2 rounded text-xs font-semibold transition text-center">
+                    🔑 Sign In
+                </button>
+                <button
+                    type="button"
+                    onclick="openAuthModal('register')"
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-2 rounded text-xs font-semibold transition text-center">
+                    + Register
+                </button>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="ml-64 w-full p-8">
+
+
+        <!-- DASHBOARD -->
+
+        <section id="dashboard" class="page active">
+
+            <div class="flex justify-between items-center mb-8">
+
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        Good Morning 👋
+                    </h2>
+
+                    <p class="text-gray-500">
+                        Here's your well-being overview for today.
+                    </p>
+                </div>
+
+                <button
+                    onclick="showPage('checkin', document.querySelectorAll('.nav-item')[1])"
+                    class="bg-indigo-600 text-white px-5 py-3 rounded-lg hover:bg-indigo-700">
+                    Start Check-In
+                </button>
+
+            </div>
+
+
+            <!-- METRIC CARDS -->
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Well-Being Score</p>
+                    <h3 id="wbScoreCard" class="text-3xl font-bold text-indigo-600 mt-2">
+                        {{ dashboard_summary.wellbeing_score if dashboard_summary else '72' }}
+                    </h3>
+                    <p class="text-xs text-green-600 mt-2">
+                        ↑ Real-time tracking
+                    </p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Stress Level</p>
+                    <h3 id="stressCard" class="text-3xl font-bold text-orange-500 mt-2">
+                        {{ dashboard_summary.stress_level if dashboard_summary else '5.0/10' }}
+                    </h3>
+                    <p id="stressSubCard" class="text-xs text-gray-500 mt-2">
+                        Scaled 1 - 10
+                    </p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Workload Load</p>
+                    <h3 id="workloadCard" class="text-3xl font-bold text-blue-600 mt-2">
+                        {{ dashboard_summary.workload_level if dashboard_summary else '6.0/10' }}
+                    </h3>
+                    <p id="workloadSubCard" class="text-xs text-gray-500 mt-2">
+                        Scaled 1 - 10
+                    </p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Current Risk</p>
+                    <span id="riskCard"
+                        class="inline-block mt-3 px-4 py-2 rounded-full font-semibold text-sm {% if dashboard_summary and dashboard_summary.risk_raw == 'Low' %}risk-low{% elif dashboard_summary and dashboard_summary.risk_raw == 'High' %}risk-high{% else %}risk-moderate{% endif %}">
+                        {{ dashboard_summary.current_risk if dashboard_summary else 'Moderate Risk' }}
+                    </span>
+                </div>
+
+            </div>
+
+
+            <!-- CHARTS -->
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <div class="bg-white p-6 rounded-xl shadow">
+
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">
+                            Weekly Well-Being Trend
+                        </h3>
+                        <span class="text-xs text-gray-500">Based on recent check-ins</span>
+                    </div>
+
+                    <canvas id="wellbeingChart"></canvcd D:\Educareas>
+
+                </div>
+
+
+                <div class="bg-white p-6 rounded-xl shadow">
+
+                    <h3 class="text-xl font-bold mb-4">
+                        Your Current Status
+                    </h3>
+
+                    <div class="text-center py-8">
+
+                        <div id="statusEmoji" class="text-6xl mb-4">
+                            {% if dashboard_summary and dashboard_summary.risk_raw == 'Low' %}🌿{% elif dashboard_summary and dashboard_summary.risk_raw == 'High' %}⚠️{% else %}😊{% endif %}
+                        </div>
+
+                        <h3 id="statusTitle" class="text-2xl font-bold">
+                            {% if dashboard_summary and dashboard_summary.risk_raw == 'Low' %}You are doing great!{% elif dashboard_summary and dashboard_summary.risk_raw == 'High' %}High stress indicators detected{% else %}You're doing okay{% endif %}
+                        </h3>
+
+                        <p id="statusDesc" class="text-gray-500 mt-2">
+                            {% if dashboard_summary and dashboard_summary.risk_raw == 'Low' %}Your psychological stamina and workload are well-balanced. Keep up healthy boundaries.{% elif dashboard_summary and dashboard_summary.risk_raw == 'High' %}Your indicators show elevated fatigue. We strongly suggest taking a pause or reaching out for support.{% else %}Keep maintaining a healthy balance between classroom work and personal time.{% endif %}
+                        </p>
+
+                        <button
+                            onclick="showPage('wellness', document.querySelectorAll('.nav-item')[3])"
+                            class="mt-5 bg-indigo-100 text-indigo-700 px-5 py-2 rounded-lg font-medium hover:bg-indigo-200 transition">
+                            View Wellness Tips
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- DAILY CHECK-IN -->
+
+        <section id="checkin" class="page">
+
+            <div class="mb-8 flex justify-between items-start">
+
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        Daily Well-Being Check-In
+                    </h2>
+
+                    <p class="text-gray-500 mt-1">
+                        Rate each statement based on your experience today. Powered by your trained EduCare Machine Learning Model.
+                    </p>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium">
+                    Scale: 1 (Strongly Disagree) to 5 (Strongly Agree)
+                </div>
+
+            </div>
+
+            <!-- CHECK-IN FORM -->
+            <form id="checkinForm" action="/predict" method="POST" onsubmit="submitCheckIn(event)" class="bg-white rounded-xl shadow p-8 max-w-4xl">
+
+                <!-- TEACHER METADATA -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8 pb-6 border-b">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700">Teacher ID</label>
+                        <input id="teacherId" name="teacher_id" type="text" value="{{ current_user.teacher_id if current_user else 'T-101' }}" readonly
+                            class="w-full mt-2 p-2.5 bg-gray-50 border rounded-lg text-gray-600 text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700">Teacher Name</label>
+                        <input id="teacherName" name="teacher_name" type="text" value="{{ current_user.name if current_user else 'Gauravi Gupta' }}"
+                            class="w-full mt-2 p-2.5 border rounded-lg text-gray-800 text-sm focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700">Department</label>
+                        <select id="department" name="department" class="w-full mt-2 p-2.5 border rounded-lg text-gray-800 text-sm focus:ring-2 focus:ring-indigo-500">
+                            {% set cur_dept = current_user.department if current_user else 'Science' %}
+                            <option value="Science" {% if cur_dept == 'Science' %}selected{% endif %}>Science</option>
+                            <option value="Math" {% if cur_dept == 'Math' %}selected{% endif %}>Math</option>
+                            <option value="Humanities" {% if cur_dept == 'Humanities' %}selected{% endif %}>Humanities</option>
+                            <option value="Arts" {% if cur_dept == 'Arts' %}selected{% endif %}>Arts</option>
+                            <option value="Languages" {% if cur_dept == 'Languages' %}selected{% endif %}>Languages</option>
+                            <option value="Physical Ed" {% if cur_dept == 'Physical Ed' %}selected{% endif %}>Physical Ed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+
+                    <!-- 1. JOB INSECURITY -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">1. Job Insecurity</label>
+                            <span id="job_insecurity_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                3.0 - Neutral
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Concerns regarding contract tenure, position stability, or institutional restructuring.
+                        </p>
+                        <input id="job_insecurity" name="job_insecurity" type="range" min="1" max="5" step="0.5" value="3.0"
+                            class="w-full feature-slider" data-feature="job_insecurity">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. WORK EXPECTATIONS -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">2. Work Expectations</label>
+                            <span id="work_expectations_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                3.5 - Moderate Agree
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Demanding deadlines, intense administrative pacing, and high performance expectations.
+                        </p>
+                        <input id="work_expectations" name="work_expectations" type="range" min="1" max="5" step="0.5" value="3.5"
+                            class="w-full feature-slider" data-feature="work_expectations">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. WORKPLACE RELATIONSHIPS -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">3. Workplace Relationships</label>
+                            <span id="relationships_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                2.5 - Moderate Disagree
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Interpersonal conflict, friction with peers, or feeling isolated in your school role.
+                        </p>
+                        <input id="relationships" name="relationships" type="range" min="1" max="5" step="0.5" value="2.5"
+                            class="w-full feature-slider" data-feature="relationships">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. ROLE AMBIGUITY -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">4. Role Ambiguity</label>
+                            <span id="role_ambiguity_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                2.5 - Moderate Disagree
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Unclear duties, conflicting institutional guidance, or uncertain performance evaluation.
+                        </p>
+                        <input id="role_ambiguity" name="role_ambiguity" type="range" min="1" max="5" step="0.5" value="2.5"
+                            class="w-full feature-slider" data-feature="role_ambiguity">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. ROLE OVERLOAD -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">5. Role Overload</label>
+                            <span id="role_overload_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                3.5 - Moderate Agree
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Excessive grading, lesson planning, extracurricular supervision, and meeting volume.
+                        </p>
+                        <input id="role_overload" name="role_overload" type="range" min="1" max="5" step="0.5" value="3.5"
+                            class="w-full feature-slider" data-feature="role_overload">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- 6. ORGANIZATION CULTURE -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">6. Organization Culture</label>
+                            <span id="organization_culture_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                3.0 - Neutral
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Institutional climate, top-down policies, and how much teacher autonomy is respected.
+                        </p>
+                        <input id="organization_culture" name="organization_culture" type="range" min="1" max="5" step="0.5" value="3.0"
+                            class="w-full feature-slider" data-feature="organization_culture">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- 7. PSYCHOLOGICAL WELL-BEING -->
+                    <div class="p-4 rounded-xl border border-gray-100 hover:border-indigo-100 transition bg-gray-50/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-bold text-gray-800">7. Psychological Well-Being (Distress)</label>
+                            <span id="psychological_wellbeing_badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                                3.0 - Neutral
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">
+                            Mental fatigue, emotional drain, stress headaches, or feelings of exhaustion after school.
+                        </p>
+                        <input id="psychological_wellbeing" name="psychological_wellbeing" type="range" min="1" max="5" step="0.5" value="3.0"
+                            class="w-full feature-slider" data-feature="psychological_wellbeing">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>1 (Strongly Disagree)</span>
+                            <span>3 (Neutral)</span>
+                            <span>5 (Strongly Agree)</span>
+                        </div>
+                    </div>
+
+                    <!-- OPTIONAL NOTE -->
+                    <div>
+                        <label class="font-semibold text-gray-700 block mb-2">
+                            Optional Confidential Note (Private to you)
+                        </label>
+                        <textarea id="checkinNotes" name="notes" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                            rows="3" placeholder="Write any personal thoughts, specific stressors, or context..."></textarea>
+                    </div>
+
+                    <div id="checkinError" class="hidden p-4 rounded-lg bg-red-50 text-red-700 text-sm font-medium"></div>
+
+                    <!-- SUBMIT BUTTON -->
+                    <button id="submitCheckinBtn" type="submit"
+                        class="w-full bg-indigo-600 text-white font-semibold py-3.5 rounded-lg hover:bg-indigo-700 transition flex items-center justify-center space-x-2">
+                        <span>Run Machine Learning Assessment</span>
+                        <span id="submitSpinner" class="hidden animate-spin">🌀</span>
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+
+        <!-- HISTORY -->
+
+        <section id="history" class="page">
+
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        My Well-Being History
+                    </h2>
+                    <p class="text-gray-500 mt-1">
+                        Track your past check-ins, stress trajectories, and model risk predictions.
+                    </p>
+                </div>
+
+                <button onclick="refreshHistoryData()" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 transition">
+                    🔄 Refresh Records
+                </button>
+            </div>
+
+            <!-- HISTORY CHART -->
+            <div class="bg-white p-6 rounded-xl shadow mb-8">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    Stress & Workload Trajectory
+                </h3>
+                <canvas id="historyChart" height="90"></canvas>
+            </div>
+
+
+            <!-- HISTORY TABLE -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+
+                <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                    <h4 class="font-bold text-gray-700">Recent Check-In Submissions</h4>
+                    <span id="historyRecordCount" class="text-xs text-gray-500 font-medium">
+                        Showing recorded check-ins
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+
+                        <thead class="bg-gray-100 text-gray-600 border-b">
+                            <tr>
+                                <th class="p-4">Date & Time</th>
+                                <th class="p-4">Teacher / Dept</th>
+                                <th class="p-4">Stress (1-10)</th>
+                                <th class="p-4">Workload (1-10)</th>
+                                <th class="p-4">Well-Being</th>
+                                <th class="p-4">Predicted Risk</th>
+                                <th class="p-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="historyTableBody">
+                            {% if recent_history %}
+                                {% for item in recent_history %}
+                                <tr class="border-t hover:bg-gray-50 transition">
+                                    <td class="p-4 text-gray-700 font-medium">{{ item.created_at[:16] }}</td>
+                                    <td class="p-4 text-gray-600">{{ item.teacher_name or 'Gauravi Gupta' }} ({{ item.department or 'Science' }})</td>
+                                    <td class="p-4 font-semibold text-orange-600">{{ item.stress_score or '5.0' }}</td>
+                                    <td class="p-4 font-semibold text-blue-600">{{ item.workload_score or '6.0' }}</td>
+                                    <td class="p-4 font-bold text-indigo-600">{{ item.wellbeing_score or '70' }}</td>
+                                    <td class="p-4">
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                            {% if item.predicted_category == 'Low' %}risk-low
+                                            {% elif item.predicted_category == 'High' %}risk-high
+                                            {% else %}risk-moderate{% endif %}">
+                                            {{ item.predicted_category }} Risk
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-center">
+                                        <button onclick="viewCheckinDetails({{ item.id }})"
+                                            class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold underline">
+                                            Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-gray-400">
+                                        No check-in history found. Submit your first assessment above!
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- WELLNESS HUB -->
+
+        <section id="wellness" class="page">
+
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">
+                    Wellness Hub 🌿
+                </h2>
+                <p class="text-gray-500 mt-1">
+                    Science-backed micro-interventions, focus tools, and confidential teacher support resources.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+
+                <!-- 1. BOX BREATHING -->
+                <div class="bg-white p-6 rounded-xl shadow text-center flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">
+                                🌬️ Box Breathing (4-4-4-4)
+                            </h3>
+                            <span id="breathingCycles" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                                Cycles: 0
+                            </span>
+                        </div>
+
+                        <p class="text-xs text-gray-500 mb-6">
+                            Used by educators to calm the sympathetic nervous system during high-stress classroom periods.
+                        </p>
+
+                        <div id="breathingCircle" class="breathing-circle flex items-center justify-center text-white font-bold text-sm shadow-inner transition-all duration-1000">
+                            <span id="breathingPhase">Ready</span>
+                        </div>
+
+                        <p id="breathingInstruction" class="mt-6 text-sm font-semibold text-indigo-700 h-6">
+                            Press Start to begin guided breathing
+                        </p>
+                    </div>
+
+                    <div class="mt-6">
+                        <button id="breathingToggleBtn" onclick="toggleBreathing()"
+                            class="bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+                            Start Breathing Exercise
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- 2. MEDITATION TIMER -->
+                <div class="bg-white p-6 rounded-xl shadow flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">
+                            🧘 Mindful Reset Timer
+                        </h3>
+                        <p class="text-xs text-gray-500 mb-6">
+                            Take a quiet restorative pause between classes or grading sessions.
+                        </p>
+
+                        <div class="text-center py-4">
+                            <div id="timer" class="text-6xl font-black text-indigo-600 font-mono tracking-tight">
+                                05:00
+                            </div>
+
+                            <!-- PRESET BUTTONS -->
+                            <div class="flex justify-center space-x-2 mt-5">
+                                <button onclick="setTimerDuration(120)" class="px-3 py-1 rounded bg-gray-100 text-xs font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">
+                                    2 min Quick
+                                </button>
+                                <button onclick="setTimerDuration(300)" class="px-3 py-1 rounded bg-indigo-100 text-xs font-medium text-indigo-700 transition">
+                                    5 min Standard
+                                </button>
+                                <button onclick="setTimerDuration(600)" class="px-3 py-1 rounded bg-gray-100 text-xs font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition">
+                                    10 min Deep
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center space-x-3 mt-6">
+                        <button id="timerToggleBtn" onclick="toggleTimer()"
+                            class="bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
+                            Start
+                        </button>
+                        <button onclick="resetTimer()"
+                            class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-200 transition">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- 3. STRESS MANAGEMENT GUIDE -->
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span>📚 Practical Coping Strategies</span>
+                    </h3>
+
+                    <div class="space-y-3.5 text-sm text-gray-600">
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <p class="font-bold text-gray-800 text-xs uppercase tracking-wide text-indigo-600 mb-1">Grading & Workload Triage</p>
+                            <p>Batch similar grading tasks together in 45-minute sprint blocks. Use peer-review rubrics for formative work.</p>
+                        </div>
+
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <p class="font-bold text-gray-800 text-xs uppercase tracking-wide text-indigo-600 mb-1">Psychological Boundaries</p>
+                            <p>Set a firm cut-off for school email notifications after 6:00 PM. Protect at least one quiet lunch period weekly.</p>
+                        </div>
+
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <p class="font-bold text-gray-800 text-xs uppercase tracking-wide text-indigo-600 mb-1">Collegial Debriefing</p>
+                            <p>Share challenging classroom scenarios with an empathetic department peer rather than holding frustration alone.</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 4. SUPPORT RESOURCES -->
+                <div class="bg-white p-6 rounded-xl shadow flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">
+                            🆘 Institutional & Emergency Support
+                        </h3>
+
+                        <p class="text-sm text-gray-600 leading-relaxed mb-4">
+                            You are never expected to carry chronic burnout alone. Free, confidential support is accessible for all faculty members.
+                        </p>
+
+                        <div class="space-y-2.5 text-xs text-gray-600 mb-6">
+                            <div class="flex items-center justify-between p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-rose-800">
+                                <span class="font-semibold">📞 National Crisis Helpline (24/7)</span>
+                                <span class="font-bold">Dial 988</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-100 rounded-lg">
+                                <span class="font-semibold">💬 Crisis Text Line</span>
+                                <span class="font-mono">Text HOME to 741741</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-100 rounded-lg">
+                                <span class="font-semibold">🏫 Faculty Wellness Counselor</span>
+                                <span>Ext. 4022</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="openGuidanceModal()"
+                        class="w-full bg-rose-100 text-rose-700 font-semibold py-2.5 rounded-lg hover:bg-rose-200 transition text-sm">
+                        Request Confidential Guidance Call
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- NOTIFICATIONS -->
+
+        <section id="notifications" class="page">
+
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        Notifications 🔔
+                    </h2>
+                    <p class="text-gray-500 mt-1">
+                        Personalized wellness alerts, reminders, and departmental announcements.
+                    </p>
+                </div>
+
+                <button onclick="clearNotifications()" class="text-xs text-gray-500 hover:text-indigo-600 font-semibold">
+                    Mark All As Read
+                </button>
+            </div>
+
+            <div id="notificationsList" class="space-y-4">
+
+                <div class="bg-white p-5 rounded-xl shadow border-l-4 border-indigo-600 flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Daily Assessment Reminder</h3>
+                        <p class="text-gray-600 text-sm mt-1">
+                            Take 2 minutes to record your daily check-in. Consistent tracking helps identify early burnout indicators.
+                        </p>
+                        <span class="text-xs text-gray-400 mt-2 block">Today at 8:00 AM</span>
+                    </div>
+                    <button onclick="showPage('checkin', document.querySelectorAll('.nav-item')[1])"
+                        class="bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded hover:bg-indigo-100">
+                        Check In
+                    </button>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow border-l-4 border-emerald-500 flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Micro-Rest Tip of the Day</h3>
+                        <p class="text-gray-600 text-sm mt-1">
+                            Try completing one 4-minute Box Breathing cycle before starting your 3rd-period lesson.
+                        </p>
+                        <span class="text-xs text-gray-400 mt-2 block">Today at 10:15 AM</span>
+                    </div>
+                    <button onclick="showPage('wellness', document.querySelectorAll('.nav-item')[3])"
+                        class="bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded hover:bg-emerald-100">
+                        Try It
+                    </button>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow border-l-4 border-amber-500">
+                    <h3 class="font-bold text-gray-800">School Administration Notice</h3>
+                    <p class="text-gray-600 text-sm mt-1">
+                        Departmental workload reviews will take place next Wednesday. Feedback on lesson pacing is welcome.
+                    </p>
+                    <span class="text-xs text-gray-400 mt-2 block">Yesterday</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ADMIN -->
+
+        <section id="admin" class="page">
+
+            <div class="flex justify-between items-center mb-8">
+
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">
+                        Administrator Dashboard
+                    </h2>
+
+                    <p class="text-gray-500 mt-1">
+                        Aggregated school-wide teacher well-being analytics and department distribution.
+                    </p>
+                </div>
+
+                <button onclick="downloadReport()"
+                    class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-indigo-700 transition flex items-center space-x-2">
+                    <span>📥 Download Full Analytics Report (CSV)</span>
+                </button>
+
+            </div>
+
+
+            <!-- ADMIN METRICS -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Total Teachers Tracked</p>
+                    <h3 id="adminTotalTeachers" class="text-3xl font-bold text-gray-800 mt-2">
+                        {{ admin_analytics.total_teachers if admin_analytics else '8' }}
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Across 6 departments</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Active Participation</p>
+                    <h3 id="adminActiveRate" class="text-3xl font-bold text-indigo-600 mt-2">
+                        {{ admin_analytics.active_rate if admin_analytics else '92%' }}
+                    </h3>
+                    <p class="text-xs text-green-600 mt-1">Regular submissions</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Average Stress Score</p>
+                    <h3 id="adminAvgStress" class="text-3xl font-bold text-orange-500 mt-2">
+                        {{ admin_analytics.avg_stress if admin_analytics else '6.3' }}/10
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Scaled Likert average</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <p class="text-gray-500 text-sm font-medium">Average Workload</p>
+                    <h3 id="adminAvgWorkload" class="text-3xl font-bold text-blue-600 mt-2">
+                        {{ admin_analytics.avg_workload if admin_analytics else '7.0' }}/10
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Role demand index</p>
+                </div>
+
+            </div>
+
+
+            <!-- ADMIN CHARTS ROW 1 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        Burnout Risk Distribution (ML Classified)
+                    </h3>
+                    <div class="max-w-xs mx-auto">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+
+
+                <div class="bg-white p-6 rounded-xl shadow">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        Average Stress & Workload by Department
+                    </h3>
+                    <canvas id="departmentChart"></canvas>
+                </div>
+
+            </div>
+
+
+            <!-- ADMIN CHARTS ROW 2 -->
+            <div class="bg-white p-6 rounded-xl shadow">
+
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        Workload vs. Stress Correlation Matrix
+                    </h3>
+                    <span class="text-xs text-gray-500">Each point represents a recorded check-in</span>
+                </div>
+
+                <canvas id="scatterChart" height="90"></canvas>
+
+            </div>
+
+        </section>
+
+
+        <!-- PREDICTION RESULTS MODAL -->
+        <div id="predictionResultModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl transform transition-all">
+
+                <!-- MODAL HEADER -->
+                <div class="text-center pb-4 border-b">
+                    <div id="resultModalIcon" class="text-5xl mb-2">🌿</div>
+                    <span id="resultModalBadge" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold">
+                        Moderate Risk
+                    </span>
+                    <h3 class="text-2xl font-bold text-gray-800 mt-2">Assessment Results</h3>
+                    <p class="text-xs text-gray-500 mt-1">Generated by EduCare Burnout Prediction Model</p>
+                </div>
+
+                <!-- PROBABILITY BARS -->
+                <div class="py-4 border-b">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Model Probability Breakdown</h4>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-emerald-700">Low Risk</span>
+                                <span id="probLowText">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                <div id="probLowBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-amber-700">Moderate Risk</span>
+                                <span id="probModText">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                <div id="probModBar" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold mb-1">
+                                <span class="text-rose-700">High Risk</span>
+                                <span id="probHighText">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                                <div id="probHighBar" class="bg-rose-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRIMARY STRESS FACTOR -->
+                <div id="highestFactorSection" class="py-3 border-b text-xs text-gray-600">
+                    <span class="font-bold text-gray-800">Primary Stress Driver:</span>
+                    <span id="highestFactorText" class="font-medium text-indigo-600">None</span>
+                </div>
+
+                <!-- RECOMMENDATIONS -->
+                <div class="py-4">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Personalized Action Steps</h4>
+                    <ul id="recommendationsList" class="space-y-2 text-xs text-gray-600 list-disc list-inside"></ul>
+                </div>
+
+                <!-- MODAL BUTTONS -->
+                <div class="pt-4 flex justify-between space-x-2 border-t">
+                    <button onclick="closeResultModal('dashboard')"
+                        class="flex-1 bg-indigo-600 text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-indigo-700 transition">
+                        View Dashboard
+                    </button>
+                    <button onclick="closeResultModal('wellness')"
+                        class="flex-1 bg-emerald-50 text-emerald-700 font-semibold py-2.5 rounded-lg text-sm hover:bg-emerald-100 transition">
+                        Wellness Hub
+                    </button>
+                    <button onclick="closeResultModal()"
+                        class="px-4 py-2.5 bg-gray-100 text-gray-600 font-semibold rounded-lg text-sm hover:bg-gray-200 transition">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- CHECK-IN DETAILS MODAL -->
+        <div id="checkinDetailsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <h3 class="text-lg font-bold text-gray-800">Check-In Inspection</h3>
+                    <button onclick="closeDetailsModal()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                </div>
+                <div id="checkinDetailsContent" class="py-4 space-y-2.5 text-xs text-gray-700"></div>
+                <div class="pt-3 border-t text-right">
+                    <button onclick="closeDetailsModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CONFIDENTIAL GUIDANCE MODAL -->
+        <div id="guidanceModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <h3 class="text-lg font-bold text-gray-800">Request Confidential Guidance</h3>
+                    <button onclick="closeGuidanceModal()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                </div>
+                <form onsubmit="submitGuidanceRequest(event)" class="py-4 space-y-4">
+                    <p class="text-xs text-gray-500">
+                        Your request is strictly confidential and routed solely to the certified faculty wellness counselor.
+                    </p>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Preferred Contact Method</label>
+                        <select id="guidanceContactMethod" class="w-full p-2 border rounded-lg text-xs">
+                            <option value="phone">Private Phone Call</option>
+                            <option value="email">Encrypted Email</option>
+                            <option value="in_person">In-Person Confidential Meeting</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Preferred Time of Day</label>
+                        <select id="guidancePreferredTime" class="w-full p-2 border rounded-lg text-xs">
+                            <option value="morning">Morning (Before 8:30 AM)</option>
+                            <option value="lunch">Lunch Period</option>
+                            <option value="afternoon">Afternoon (After 3:30 PM)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Brief Note (Optional)</label>
+                        <textarea id="guidanceNote" rows="2" class="w-full p-2 border rounded-lg text-xs"
+                            placeholder="e.g. Workload overwhelm, seeking stress coping tools..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-rose-600 text-white font-semibold py-2.5 rounded-lg text-sm hover:bg-rose-700 transition">
+                        Submit Confidential Request
+                    </button>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- TEACHER AUTHENTICATION MODAL (LOGIN & REGISTRATION) -->
+        <div id="authModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <div class="flex gap-4">
+                        <button id="authTabLogin" type="button" onclick="switchAuthTab('login')" class="text-base font-bold text-indigo-600 border-b-2 border-indigo-600 pb-1">
+                            Teacher Sign In
+                        </button>
+                        <button id="authTabRegister" type="button" onclick="switchAuthTab('register')" class="text-base font-semibold text-gray-500 hover:text-gray-700 pb-1">
+                            Register Account
+                        </button>
+                    </div>
+                    <button type="button" onclick="closeAuthModal()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <form id="loginForm" onsubmit="handleTeacherLogin(event)" class="py-4 space-y-4">
+                    <div id="loginAlert" class="hidden p-3 rounded-lg text-xs"></div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Teacher ID or Email</label>
+                        <input id="loginIdentifier" type="text" required placeholder="e.g. T-101 or gauravi@educare.edu"
+                            class="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                        <input id="loginPassword" type="password" required placeholder="••••••••"
+                            class="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
+                        Sign In
+                    </button>
+
+                    <div class="pt-3 border-t">
+                        <p class="text-xs text-gray-500 font-medium mb-2">⚡ Quick Switch Demo Faculty (Pre-loaded):</p>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button type="button" onclick="quickFillLogin('gauravi@educare.edu', 'password123')"
+                                class="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-left font-medium transition">
+                                🔬 Gauravi Gupta (Science)
+                            </button>
+                            <button type="button" onclick="quickFillLogin('rahul@educare.edu', 'password123')"
+                                class="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-left font-medium transition">
+                                📐 Rahul Sharma (Math)
+                            </button>
+                            <button type="button" onclick="quickFillLogin('ananya@educare.edu', 'password123')"
+                                class="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-left font-medium transition">
+                                📚 Ananya Verma (Humanities)
+                            </button>
+                            <button type="button" onclick="quickFillLogin('rohan@educare.edu', 'password123')"
+                                class="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-left font-medium transition">
+                                ⚽ Rohan Mehta (Phys Ed)
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- REGISTER FORM -->
+                <form id="registerForm" onsubmit="handleTeacherRegister(event)" class="hidden py-4 space-y-3">
+                    <div id="registerAlert" class="hidden p-3 rounded-lg text-xs"></div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Teacher ID</label>
+                        <input id="regTeacherId" type="text" required placeholder="e.g. T-109"
+                            class="w-full p-2 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
+                        <input id="regName" type="text" required placeholder="e.g. Meera Desai"
+                            class="w-full p-2 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Email Address</label>
+                        <input id="regEmail" type="email" required placeholder="e.g. meera@educare.edu"
+                            class="w-full p-2 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Department</label>
+                        <select id="regDepartment" class="w-full p-2 border rounded-lg text-xs">
+                            <option value="Science">Science</option>
+                            <option value="Math">Math</option>
+                            <option value="Humanities">Humanities</option>
+                            <option value="Arts">Arts</option>
+                            <option value="Languages">Languages</option>
+                            <option value="Physical Ed">Physical Ed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                        <input id="regPassword" type="password" required minlength="4" placeholder="At least 4 characters"
+                            class="w-full p-2 border rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
+                        Create Faculty Account
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<script>
+
+    // GLOBAL DATA & CHART INSTANCES
+    const serverDashboard = {{ dashboard_summary | tojson if dashboard_summary else '{}' }};
+    const serverAdmin = {{ admin_analytics | tojson if admin_analytics else '{}' }};
+    const serverHistory = {{ recent_history | tojson if recent_history else '[]' }};
+
+    let wellbeingChartInstance = null;
+    let historyChartInstance = null;
+    let riskChartInstance = null;
+    let departmentChartInstance = null;
+    let scatterChartInstance = null;
+
+    // PAGE NAVIGATION
+    function showPage(pageId, element) {
+        document.querySelectorAll(".page").forEach(page => {
+            page.classList.remove("active");
+        });
+
+        const target = document.getElementById(pageId);
+        if (target) {
+            target.classList.add("active");
+        }
+
+        document.querySelectorAll(".nav-item").forEach(item => {
+            item.classList.remove("active");
+        });
+
+        if (element) {
+            element.classList.add("active");
+        } else {
+            const navs = document.querySelectorAll(".nav-item");
+            const navIndex = { dashboard: 0, checkin: 1, history: 2, wellness: 3, notifications: 4, admin: 5 };
+            if (navIndex[pageId] !== undefined && navs[navIndex[pageId]]) {
+                navs[navIndex[pageId]].classList.add("active");
+            }
+        }
+
+        // Trigger chart resize when switching pages
+        if (pageId === "dashboard" && wellbeingChartInstance) wellbeingChartInstance.resize();
+        if (pageId === "history" && historyChartInstance) historyChartInstance.resize();
+        if (pageId === "admin") {
+            if (riskChartInstance) riskChartInstance.resize();
+            if (departmentChartInstance) departmentChartInstance.resize();
+            if (scatterChartInstance) scatterChartInstance.resize();
+        }
+    }
+
+
+    // 0. TEACHER AUTHENTICATION & PROFILE SWITCHING
+    function openAuthModal(tab = 'login') {
+        const modal = document.getElementById("authModal");
+        if (modal) {
+            modal.classList.remove("hidden");
+            switchAuthTab(tab);
+        }
+    }
+
+    function closeAuthModal() {
+        const modal = document.getElementById("authModal");
+        if (modal) modal.classList.add("hidden");
+    }
+
+    function switchAuthTab(tab) {
+        const loginForm = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
+        const tabLogin = document.getElementById("authTabLogin");
+        const tabRegister = document.getElementById("authTabRegister");
+
+        if (tab === 'login') {
+            loginForm.classList.remove("hidden");
+            registerForm.classList.add("hidden");
+            tabLogin.className = "text-base font-bold text-indigo-600 border-b-2 border-indigo-600 pb-1";
+            tabRegister.className = "text-base font-semibold text-gray-500 hover:text-gray-700 pb-1";
+        } else {
+            loginForm.classList.add("hidden");
+            registerForm.classList.remove("hidden");
+            tabRegister.className = "text-base font-bold text-indigo-600 border-b-2 border-indigo-600 pb-1";
+            tabLogin.className = "text-base font-semibold text-gray-500 hover:text-gray-700 pb-1";
+        }
+    }
+
+    function quickFillLogin(identifier, pwd) {
+        document.getElementById("loginIdentifier").value = identifier;
+        document.getElementById("loginPassword").value = pwd;
+        const fakeEvent = { preventDefault: () => {} };
+        handleTeacherLogin(fakeEvent);
+    }
+
+    async function handleTeacherLogin(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const alertBox = document.getElementById("loginAlert");
+        alertBox.className = "hidden";
+
+        const identifier = document.getElementById("loginIdentifier").value.trim();
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+            const res = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ identifier, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                alertBox.className = "p-3 rounded-lg text-xs bg-rose-50 text-rose-700 border border-rose-200 block";
+                alertBox.textContent = data.error || "Login failed. Please check credentials.";
+                return;
+            }
+
+            closeAuthModal();
+            applyAuthenticatedTeacher(data.teacher);
+        } catch (err) {
+            alertBox.className = "p-3 rounded-lg text-xs bg-rose-50 text-rose-700 border border-rose-200 block";
+            alertBox.textContent = "Network error during login.";
+        }
+    }
+
+    async function handleTeacherRegister(e) {
+        if (e && e.preventDefault) e.preventDefault();
+        const alertBox = document.getElementById("registerAlert");
+        alertBox.className = "hidden";
+
+        const payload = {
+            teacher_id: document.getElementById("regTeacherId").value.trim(),
+            name: document.getElementById("regName").value.trim(),
+            email: document.getElementById("regEmail").value.trim(),
+            department: document.getElementById("regDepartment").value,
+            password: document.getElementById("regPassword").value
+        };
+
+        try {
+            const res = await fetch("/api/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                alertBox.className = "p-3 rounded-lg text-xs bg-rose-50 text-rose-700 border border-rose-200 block";
+                alertBox.textContent = data.error || "Registration failed.";
+                return;
+            }
+
+            closeAuthModal();
+            applyAuthenticatedTeacher(data.teacher);
+        } catch (err) {
+            alertBox.className = "p-3 rounded-lg text-xs bg-rose-50 text-rose-700 border border-rose-200 block";
+            alertBox.textContent = "Network error during registration.";
+        }
+    }
+
+    async function applyAuthenticatedTeacher(teacher) {
+        if (!teacher) return;
+
+        // 1. Update sidebar
+        const nameElem = document.getElementById("sidebarTeacherName");
+        const deptElem = document.getElementById("sidebarTeacherDept");
+        if (nameElem) nameElem.textContent = teacher.name;
+        if (deptElem) deptElem.innerHTML = `${teacher.department} • <span id="sidebarTeacherId">${teacher.teacher_id}</span>`;
+
+        // 2. Update Check-In Form metadata
+        const tIdInput = document.getElementById("teacherId");
+        const tNameInput = document.getElementById("teacherName");
+        const deptSelect = document.getElementById("department");
+        if (tIdInput) tIdInput.value = teacher.teacher_id;
+        if (tNameInput) tNameInput.value = teacher.name;
+        if (deptSelect) deptSelect.value = teacher.department;
+
+        // 3. Fetch active teacher's dashboard metrics
+        try {
+            const dashRes = await fetch(`/api/dashboard-stats?teacher_id=${encodeURIComponent(teacher.teacher_id)}`);
+            const dashData = await dashRes.json();
+            if (dashData.success && dashData.summary) {
+                updateDashboardUI(dashData.summary);
+            }
+        } catch (err) {
+            console.error("Failed to load dashboard for teacher", err);
+        }
+
+        // 4. Fetch active teacher's history
+        try {
+            const histRes = await fetch(`/api/history?teacher_id=${encodeURIComponent(teacher.teacher_id)}`);
+            const histData = await histRes.json();
+            if (histData.success && histData.history) {
+                renderHistoryTable(histData.history);
+                if (historyChartInstance && histData.history.length > 0) {
+                    const chronological = [...histData.history].reverse().slice(-7);
+                    historyChartInstance.data.labels = chronological.map(item => (item.created_at || "").slice(5, 10));
+                    historyChartInstance.data.datasets[0].data = chronological.map(item => item.stress_score || 5);
+                    historyChartInstance.data.datasets[1].data = chronological.map(item => item.workload_score || 6);
+                    historyChartInstance.update();
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load history for teacher", err);
+        }
+
+        // 5. Toast alert
+        alert(`Welcome, ${teacher.name} (${teacher.teacher_id})!\nActive profile switched to ${teacher.department} department.`);
+    }
+
+    function renderHistoryTable(records) {
+        const tbody = document.getElementById("historyTableBody");
+        if (!tbody) return;
+
+        if (!records || records.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="p-8 text-center text-gray-400">
+                        No check-in entries found for this teacher. Complete a check-in to start tracking!
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = records.map(item => {
+            const riskClass = item.predicted_category === "Low" ? "risk-low" : item.predicted_category === "High" ? "risk-high" : "risk-moderate";
+            return `
+                <tr class="border-t hover:bg-gray-50 transition">
+                    <td class="p-4 text-gray-700 font-medium">${item.created_at || '-'}</td>
+                    <td class="p-4 text-gray-600">${item.teacher_name || 'Teacher'} (${item.department || 'General'})</td>
+                    <td class="p-4 font-semibold text-orange-600">${item.stress_score || '-'}</td>
+                    <td class="p-4 font-semibold text-blue-600">${item.workload_score || '-'}</td>
+                    <td class="p-4 font-bold text-indigo-600">${item.wellbeing_score || '-'}</td>
+                    <td class="p-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${riskClass}">
+                            ${item.predicted_category} Risk
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="viewCheckinDetails(${item.id})" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold underline">
+                            Details
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+
+    // 1. QUESTIONNAIRE SLIDERS & LIVE LABELS
+    const likertLabels = {
+        "1.0": "1.0 - Strongly Disagree",
+        "1.5": "1.5 - Disagree",
+        "2.0": "2.0 - Mild Disagree",
+        "2.5": "2.5 - Slight Disagree",
+        "3.0": "3.0 - Neutral",
+        "3.5": "3.5 - Moderate Agree",
+        "4.0": "4.0 - Agree",
+        "4.5": "4.5 - Strong Agree",
+        "5.0": "5.0 - Strongly Agree"
+    };
+
+    document.querySelectorAll(".feature-slider").forEach(slider => {
+        const feature = slider.dataset.feature;
+        const badge = document.getElementById(feature + "_badge");
+
+        slider.addEventListener("input", function() {
+            const val = parseFloat(this.value).toFixed(1);
+            const label = likertLabels[val] || `${val}`;
+            if (badge) {
+                badge.textContent = label;
+                if (parseFloat(val) >= 4.0) {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700";
+                } else if (parseFloat(val) >= 3.0) {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700";
+                } else {
+                    badge.className = "px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700";
+                }
+            }
+        });
+    });
+
+
+    // 2. DAILY CHECK-IN SUBMISSION (ASYNC ML PREDICTION)
+    async function submitCheckIn(e) {
+        e.preventDefault();
+        const errorDiv = document.getElementById("checkinError");
+        errorDiv.classList.add("hidden");
+
+        const btn = document.getElementById("submitCheckinBtn");
+        const spinner = document.getElementById("submitSpinner");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+
+        const payload = {
+            teacher_id: document.getElementById("teacherId").value,
+            teacher_name: document.getElementById("teacherName").value,
+            department: document.getElementById("department").value,
+            notes: document.getElementById("checkinNotes").value,
+            job_insecurity: parseFloat(document.getElementById("job_insecurity").value),
+            work_expectations: parseFloat(document.getElementById("work_expectations").value),
+            relationships: parseFloat(document.getElementById("relationships").value),
+            role_ambiguity: parseFloat(document.getElementById("role_ambiguity").value),
+            role_overload: parseFloat(document.getElementById("role_overload").value),
+            organization_culture: parseFloat(document.getElementById("organization_culture").value),
+            psychological_wellbeing: parseFloat(document.getElementById("psychological_wellbeing").value)
+        };
+
+        try {
+            const res = await fetch("/api/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+                throw new Error(data.error || "Prediction failed");
+            }
+
+            // Display Prediction Results Modal
+            displayResultModal(data);
+
+            // Update Dashboard cards in real-time
+            if (data.dashboard_summary) {
+                updateDashboardUI(data.dashboard_summary);
+            }
+
+            // Prepend new row to History table
+            prependHistoryRow(data, payload);
+
+            // Refresh history chart
+            refreshHistoryData();
+
+        } catch (err) {
+            errorDiv.textContent = err.message || "An error occurred while evaluating your check-in.";
+            errorDiv.classList.remove("hidden");
+        } finally {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+    }
+
+
+    // 3. DISPLAY PREDICTION RESULTS MODAL
+    function displayResultModal(data) {
+        const modal = document.getElementById("predictionResultModal");
+        const icon = document.getElementById("resultModalIcon");
+        const badge = document.getElementById("resultModalBadge");
+        const lowBar = document.getElementById("probLowBar");
+        const modBar = document.getElementById("probModBar");
+        const highBar = document.getElementById("probHighBar");
+        const lowText = document.getElementById("probLowText");
+        const modText = document.getElementById("probModText");
+        const highText = document.getElementById("probHighText");
+        const highestFactorText = document.getElementById("highestFactorText");
+        const recsList = document.getElementById("recommendationsList");
+
+        const risk = data.prediction || "Moderate";
+        badge.textContent = `${risk} Risk`;
+
+        if (risk === "Low") {
+            icon.textContent = "🌿";
+            badge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold risk-low";
+        } else if (risk === "High") {
+            icon.textContent = "⚠️";
+            badge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold risk-high";
+        } else {
+            icon.textContent = "😊";
+            badge.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold risk-moderate";
+        }
+
+        const probs = data.probabilities || {};
+        const pLow = probs.Low || 0;
+        const pMod = probs.Moderate || 0;
+        const pHigh = probs.High || 0;
+
+        lowBar.style.width = pLow + "%";
+        modBar.style.width = pMod + "%";
+        highBar.style.width = pHigh + "%";
+        lowText.textContent = pLow + "%";
+        modText.textContent = pMod + "%";
+        highText.textContent = pHigh + "%";
+
+        if (data.highest_factor) {
+            highestFactorText.textContent = `${data.highest_factor.label} (${data.highest_factor.score}/5)`;
+        } else {
+            highestFactorText.textContent = "Well-balanced constructs";
+        }
+
+        recsList.innerHTML = "";
+        (data.recommendations || []).forEach(rec => {
+            const li = document.createElement("li");
+            li.textContent = rec;
+            recsList.appendChild(li);
+        });
+
+        modal.classList.remove("hidden");
+    }
+
+    function closeResultModal(navigateTo) {
+        document.getElementById("predictionResultModal").classList.add("hidden");
+        if (navigateTo) {
+            showPage(navigateTo);
+        }
+    }
+
+
+    // 4. REAL-TIME DASHBOARD UI UPDATE
+    function updateDashboardUI(summary) {
+        if (!summary) return;
+
+        const wb = document.getElementById("wbScoreCard");
+        const st = document.getElementById("stressCard");
+        const wl = document.getElementById("workloadCard");
+        const rk = document.getElementById("riskCard");
+        const emoji = document.getElementById("statusEmoji");
+        const title = document.getElementById("statusTitle");
+        const desc = document.getElementById("statusDesc");
+
+        if (wb) wb.textContent = summary.wellbeing_score;
+        if (st) st.textContent = summary.stress_level;
+        if (wl) wl.textContent = summary.workload_level;
+
+        if (rk) {
+            rk.textContent = summary.current_risk;
+            rk.className = "inline-block mt-3 px-4 py-2 rounded-full font-semibold text-sm " +
+                (summary.risk_raw === "Low" ? "risk-low" : summary.risk_raw === "High" ? "risk-high" : "risk-moderate");
+        }
+
+        if (emoji && title && desc) {
+            if (summary.risk_raw === "Low") {
+                emoji.textContent = "🌿";
+                title.textContent = "You are doing great!";
+                desc.textContent = "Your psychological stamina and workload are well-balanced. Keep up healthy boundaries.";
+            } else if (summary.risk_raw === "High") {
+                emoji.textContent = "⚠️";
+                title.textContent = "High stress indicators detected";
+                desc.textContent = "Your indicators show elevated fatigue. We strongly suggest taking a pause or reaching out for support.";
+            } else {
+                emoji.textContent = "😊";
+                title.textContent = "You're doing okay";
+                desc.textContent = "Keep maintaining a healthy balance between classroom work and personal time.";
+            }
+        }
+
+        // Update dashboard chart
+        if (wellbeingChartInstance && summary.trend_scores && summary.trend_labels) {
+            wellbeingChartInstance.data.labels = summary.trend_labels;
+            wellbeingChartInstance.data.datasets[0].data = summary.trend_scores;
+            wellbeingChartInstance.update();
+        }
+    }
+
+
+    // 5. HISTORY TABLE UPDATE
+    function prependHistoryRow(data, payload) {
+        const tbody = document.getElementById("historyTableBody");
+        if (!tbody) return;
+
+        const now = new Date();
+        const timeStr = now.toISOString().slice(0, 16).replace("T", " ");
+
+        const avgStress = ((payload.role_overload + payload.work_expectations + payload.relationships) / 3);
+        const stress10 = (((avgStress - 1) / 4 * 9) + 1).toFixed(1);
+
+        const avgWork = ((payload.role_overload + payload.work_expectations) / 2);
+        const work10 = (((avgWork - 1) / 4 * 9) + 1).toFixed(1);
+
+        const avgAll = (payload.job_insecurity + payload.work_expectations + payload.relationships +
+                        payload.role_ambiguity + payload.role_overload + payload.organization_culture +
+                        payload.psychological_wellbeing) / 7;
+        const wbScore = Math.round((5 - avgAll) / 4 * 100);
+
+        const riskClass = data.prediction === "Low" ? "risk-low" : data.prediction === "High" ? "risk-high" : "risk-moderate";
+
+        const tr = document.createElement("tr");
+        tr.className = "border-t bg-indigo-50/40 hover:bg-gray-50 transition";
+        tr.innerHTML = `
+            <td class="p-4 text-gray-700 font-medium">${timeStr} <span class="text-xs text-indigo-600 font-bold ml-1">New</span></td>
+            <td class="p-4 text-gray-600">${payload.teacher_name} (${payload.department})</td>
+            <td class="p-4 font-semibold text-orange-600">${stress10}</td>
+            <td class="p-4 font-semibold text-blue-600">${work10}</td>
+            <td class="p-4 font-bold text-indigo-600">${wbScore}</td>
+            <td class="p-4">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${riskClass}">
+                    ${data.prediction} Risk
+                </span>
+            </td>
+            <td class="p-4 text-center">
+                <button onclick="viewCheckinDetails(${data.prediction_id})" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold underline">
+                    Details
+                </button>
+            </td>
+        `;
+
+        // If placeholder row exists, clear it
+        if (tbody.children.length === 1 && tbody.children[0].children.length === 1) {
+            tbody.innerHTML = "";
+        }
+
+        tbody.insertBefore(tr, tbody.firstChild);
+    }
+
+
+    // 6. HISTORY INSPECTION MODAL
+    async function viewCheckinDetails(recordId) {
+        const modal = document.getElementById("checkinDetailsModal");
+        const content = document.getElementById("checkinDetailsContent");
+        content.innerHTML = "<p class='text-gray-400'>Loading details...</p>";
+        modal.classList.remove("hidden");
+
+        try {
+            const res = await fetch("/api/history");
+            const data = await res.json();
+            const record = (data.history || []).find(r => r.id === recordId);
+
+            if (!record) {
+                content.innerHTML = "<p class='text-red-500'>Record not found.</p>";
+                return;
+            }
+
+            const resp = record.responses || {};
+            const probs = record.probabilities || {};
+
+            content.innerHTML = `
+                <div class="p-3 bg-gray-50 rounded-lg space-y-1 mb-3">
+                    <p><strong>Teacher:</strong> ${record.teacher_name || 'Gauravi Gupta'} (${record.department || 'General'})</p>
+                    <p><strong>Recorded At:</strong> ${record.created_at}</p>
+                    <p><strong>Predicted Burnout Risk:</strong> <span class="font-bold text-indigo-700">${record.predicted_category} Risk</span></p>
+                    <p><strong>Well-Being Index:</strong> ${record.wellbeing_score || '70'}/100</p>
+                </div>
+                <h4 class="font-bold text-gray-800 border-b pb-1 text-xs uppercase tracking-wide">Construct Ratings (1 to 5)</h4>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>Job Insecurity: <strong>${resp.job_insecurity || '-'}</strong></div>
+                    <div>Work Expectations: <strong>${resp.work_expectations || '-'}</strong></div>
+                    <div>Relationships: <strong>${resp.relationships || '-'}</strong></div>
+                    <div>Role Ambiguity: <strong>${resp.role_ambiguity || '-'}</strong></div>
+                    <div>Role Overload: <strong>${resp.role_overload || '-'}</strong></div>
+                    <div>Org Culture: <strong>${resp.organization_culture || '-'}</strong></div>
+                    <div>Psychological Well-Being: <strong>${resp.psychological_wellbeing || '-'}</strong></div>
+                </div>
+                ${record.notes ? `<div class="mt-3 p-2 bg-yellow-50 text-yellow-800 rounded text-xs"><strong>Note:</strong> ${record.notes}</div>` : ''}
+            `;
+        } catch (e) {
+            content.innerHTML = "<p class='text-red-500'>Failed to load record details.</p>";
+        }
+    }
+
+    function closeDetailsModal() {
+        document.getElementById("checkinDetailsModal").classList.add("hidden");
+    }
+
+
+    // 7. ASYNC HISTORY DATA REFRESH
+    async function refreshHistoryData() {
+        try {
+            const res = await fetch("/api/history");
+            const data = await res.json();
+            const history = data.history || [];
+
+            if (historyChartInstance && history.length > 0) {
+                const chronological = [...history].reverse().slice(-10);
+                const labels = chronological.map(item => (item.created_at || "").slice(5, 10));
+                const stressData = chronological.map(item => item.stress_score || 5);
+                const workloadData = chronological.map(item => item.workload_score || 6);
+
+                historyChartInstance.data.labels = labels;
+                historyChartInstance.data.datasets[0].data = stressData;
+                historyChartInstance.data.datasets[1].data = workloadData;
+                historyChartInstance.update();
+            }
+        } catch (e) {
+            console.error("Failed to refresh history", e);
+        }
+    }
+
+
+    // 8. WELLNESS: INTERACTIVE BOX BREATHING
+    let breathingInterval = null;
+    let breathingRunning = false;
+    let breathingSeconds = 0;
+    let completedCycles = 0;
+
+    function toggleBreathing() {
+        const btn = document.getElementById("breathingToggleBtn");
+        const circle = document.getElementById("breathingCircle");
+        const phaseText = document.getElementById("breathingPhase");
+        const instruction = document.getElementById("breathingInstruction");
+        const cyclesBadge = document.getElementById("breathingCycles");
+
+        if (breathingRunning) {
+            // STOP
+            clearInterval(breathingInterval);
+            breathingRunning = false;
+            btn.textContent = "Resume Breathing Exercise";
+            btn.className = "bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition";
+            instruction.textContent = "Exercise paused. Great job completing " + completedCycles + " cycles.";
+            circle.style.transform = "scale(0.8)";
+            phaseText.textContent = "Paused";
+            return;
+        }
+
+        // START
+        breathingRunning = true;
+        btn.textContent = "Pause Exercise";
+        btn.className = "bg-gray-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-700 transition";
+
+        breathingInterval = setInterval(() => {
+            breathingSeconds = (breathingSeconds + 1) % 16;
+            const cyclePhase = Math.floor(breathingSeconds / 4);
+            const phaseSec = (breathingSeconds % 4) + 1;
+
+            if (cyclePhase === 0) {
+                // INHALE (0-3s)
+                phaseText.textContent = `Inhale (${4 - phaseSec + 1})`;
+                instruction.textContent = "Breathe in deeply through your nose...";
+                circle.style.transform = `scale(${0.75 + (phaseSec * 0.1)})`;
+                circle.style.backgroundColor = "#4f46e5";
+            } else if (cyclePhase === 1) {
+                // HOLD FULL (4-7s)
+                phaseText.textContent = `Hold (${4 - phaseSec + 1})`;
+                instruction.textContent = "Gently hold your breath with relaxed shoulders...";
+                circle.style.transform = "scale(1.15)";
+                circle.style.backgroundColor = "#6366f1";
+            } else if (cyclePhase === 2) {
+                // EXHALE (8-11s)
+                phaseText.textContent = `Exhale (${4 - phaseSec + 1})`;
+                instruction.textContent = "Slowly exhale all tension through your mouth...";
+                circle.style.transform = `scale(${1.15 - (phaseSec * 0.1)})`;
+                circle.style.backgroundColor = "#4338ca";
+            } else {
+                // HOLD EMPTY (12-15s)
+                phaseText.textContent = `Rest (${4 - phaseSec + 1})`;
+                instruction.textContent = "Pause in stillness before the next breath...";
+                circle.style.transform = "scale(0.75)";
+                circle.style.backgroundColor = "#3730a3";
+            }
+
+            if (breathingSeconds === 0) {
+                completedCycles++;
+                cyclesBadge.textContent = "Cycles: " + completedCycles;
+            }
+        }, 1000);
+    }
+
+
+    // 9. WELLNESS: MEDITATION TIMER
+    let timerDuration = 300;
+    let timerRemaining = 300;
+    let timerRunning = false;
+    let timerInterval = null;
+
+    function setTimerDuration(seconds) {
+        resetTimer();
+        timerDuration = seconds;
+        timerRemaining = seconds;
+        updateTimerDisplay();
+    }
+
+    function toggleTimer() {
+        const btn = document.getElementById("timerToggleBtn");
+        if (timerRunning) {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            btn.textContent = "Resume";
+            btn.className = "bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition";
+            return;
+        }
+
+        timerRunning = true;
+        btn.textContent = "Pause";
+        btn.className = "bg-gray-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-700 transition";
+
+        timerInterval = setInterval(() => {
+            if (timerRemaining <= 0) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                btn.textContent = "Start";
+                btn.className = "bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition";
+                alert("🧘 Restorative session complete. Take a gentle breath before returning to your day.");
+                resetTimer();
+                return;
+            }
+            timerRemaining--;
+            updateTimerDisplay();
+        }, 1000);
+    }
+
+    function resetTimer() {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        timerRemaining = timerDuration;
+        const btn = document.getElementById("timerToggleBtn");
+        if (btn) {
+            btn.textContent = "Start";
+            btn.className = "bg-indigo-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition";
+        }
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const min = Math.floor(timerRemaining / 60);
+        const sec = timerRemaining % 60;
+        const timerElem = document.getElementById("timer");
+        if (timerElem) {
+            timerElem.textContent = String(min).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+        }
+    }
+
+
+    // 10. CONFIDENTIAL GUIDANCE MODAL
+    function openGuidanceModal() {
+        document.getElementById("guidanceModal").classList.remove("hidden");
+    }
+
+    function closeGuidanceModal() {
+        document.getElementById("guidanceModal").classList.add("hidden");
+    }
+
+    function submitGuidanceRequest(e) {
+        e.preventDefault();
+        const method = document.getElementById("guidanceContactMethod").value;
+        const time = document.getElementById("guidancePreferredTime").value;
+        closeGuidanceModal();
+        alert(`Confidential guidance request received.\n\nThe faculty wellness counselor will reach out via ${method.replace('_', ' ')} during your preferred window (${time}).`);
+    }
+
+    function clearNotifications() {
+        const list = document.getElementById("notificationsList");
+        if (list) {
+            list.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow text-center text-gray-400 text-sm">
+                    ✨ All notifications have been marked as read.
+                </div>
+            `;
+        }
+    }
+
+
+    // 11. EXPORT REPORT (REAL CSV DOWNLOAD)
+    function downloadReport() {
+        window.location.href = "/api/export-report";
+    }
+
+
+    // 12. INITIALIZE CHARTS ON LOAD
+    window.addEventListener("DOMContentLoaded", function () {
+
+        // CHART 1: WEEKLY WELL-BEING TREND (DASHBOARD)
+        const wbLabels = (serverDashboard.trend_labels && serverDashboard.trend_labels.length > 0)
+            ? serverDashboard.trend_labels
+            : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+        const wbScores = (serverDashboard.trend_scores && serverDashboard.trend_scores.length > 0)
+            ? serverDashboard.trend_scores
+            : [68, 70, 67, 72, 75, 71, 74];
+
+        const wbCtx = document.getElementById("wellbeingChart");
+        if (wbCtx) {
+            wellbeingChartInstance = new Chart(wbCtx, {
+                type: "line",
+                data: {
+                    labels: wbLabels,
+                    datasets: [{
+                        label: "Well-Being Score (0-100)",
+                        data: wbScores,
+                        borderColor: "#4f46e5",
+                        backgroundColor: "rgba(79, 70, 229, 0.1)",
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+
+
+        // CHART 2: HISTORY CHART (STRESS & WORKLOAD)
+        const histLabels = serverHistory.length > 0
+            ? [...serverHistory].reverse().slice(-7).map(item => (item.created_at || "").slice(5, 10))
+            : ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"];
+
+        const histStress = serverHistory.length > 0
+            ? [...serverHistory].reverse().slice(-7).map(item => item.stress_score || 5)
+            : [5.2, 5.0, 5.8, 6.2, 5.5];
+
+        const histWorkload = serverHistory.length > 0
+            ? [...serverHistory].reverse().slice(-7).map(item => item.workload_score || 6)
+            : [6.0, 5.8, 6.5, 7.0, 6.2];
+
+        const histCtx = document.getElementById("historyChart");
+        if (histCtx) {
+            historyChartInstance = new Chart(histCtx, {
+                type: "line",
+                data: {
+                    labels: histLabels,
+                    datasets: [
+                        {
+                            label: "Stress (1-10)",
+                            data: histStress,
+                            borderColor: "#f97316",
+                            backgroundColor: "rgba(249, 115, 22, 0.1)",
+                            borderWidth: 2.5,
+                            tension: 0.3
+                        },
+                        {
+                            label: "Workload (1-10)",
+                            data: histWorkload,
+                            borderColor: "#2563eb",
+                            backgroundColor: "rgba(37, 99, 235, 0.1)",
+                            borderWidth: 2.5,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { min: 0, max: 10 }
+                    }
+                }
+            });
+        }
+
+
+        // CHART 3: ADMIN RISK DISTRIBUTION DOUGHNUT
+        const riskCounts = serverAdmin.risk_counts || { Low: 5, Moderate: 4, High: 2 };
+        const riskCtx = document.getElementById("riskChart");
+        if (riskCtx) {
+            riskChartInstance = new Chart(riskCtx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Low Risk", "Moderate Risk", "High Risk"],
+                    datasets: [{
+                        data: [riskCounts.Low || 0, riskCounts.Moderate || 0, riskCounts.High || 0],
+                        backgroundColor: ["#10b981", "#f59e0b", "#f43f5e"],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: "bottom" }
+                    }
+                }
+            });
+        }
+
+
+        // CHART 4: ADMIN DEPARTMENT OVERVIEW BAR
+        const deptOverview = serverAdmin.department_overview || [];
+        const deptLabels = deptOverview.map(d => d.department);
+        const deptStress = deptOverview.map(d => d.avg_stress);
+        const deptWork = deptOverview.map(d => d.avg_workload);
+
+        const deptCtx = document.getElementById("departmentChart");
+        if (deptCtx) {
+            departmentChartInstance = new Chart(deptCtx, {
+                type: "bar",
+                data: {
+                    labels: deptLabels.length > 0 ? deptLabels : ["Science", "Math", "Humanities", "Arts", "Languages", "Physical Ed"],
+                    datasets: [
+                        {
+                            label: "Avg Stress (1-10)",
+                            data: deptStress.length > 0 ? deptStress : [6.4, 7.6, 4.8, 4.9, 6.9, 5.3],
+                            backgroundColor: "rgba(249, 115, 22, 0.8)"
+                        },
+                        {
+                            label: "Avg Workload (1-10)",
+                            data: deptWork.length > 0 ? deptWork : [7.1, 8.2, 5.3, 5.7, 7.3, 6.3],
+                            backgroundColor: "rgba(79, 70, 229, 0.8)"
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, max: 10 }
+                    }
+                }
+            });
+        }
+
+
+        // CHART 5: WORKLOAD VS STRESS SCATTER MATRIX
+        const scatterData = (serverAdmin.scatter_data && serverAdmin.scatter_data.length > 0)
+            ? serverAdmin.scatter_data
+            : [
+                { x: 5.5, y: 4.8 },
+                { x: 6.3, y: 5.6 },
+                { x: 8.5, y: 8.1 },
+                { x: 7.8, y: 7.0 },
+                { x: 5.3, y: 4.8 },
+                { x: 9.2, y: 8.6 }
+            ];
+
+        const scatterCtx = document.getElementById("scatterChart");
+        if (scatterCtx) {
+            scatterChartInstance = new Chart(scatterCtx, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        label: "Teacher Check-Ins",
+                        data: scatterData,
+                        backgroundColor: "#6366f1",
+                        borderColor: "#4338ca",
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: { display: true, text: "Workload Rating (1 - 10)" },
+                            min: 0,
+                            max: 10
+                        },
+                        y: {
+                            title: { display: true, text: "Stress Rating (1 - 10)" },
+                            min: 0,
+                            max: 10
+                        }
+                    }
+                }
+            });
+        }
+
+    });
+
+</script>
+</body>
+</html>
