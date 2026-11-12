@@ -1,117 +1,230 @@
 # EduCare: Real-Time Teacher Well-Being Support System
 
-EduCare is an intelligent, machine-learning-powered educator well-being support platform designed to assess, monitor, and alleviate teacher burnout and occupational stress in educational institutions.
+EduCare is a machine-learning-powered teacher well-being support platform designed to assess and monitor occupational stress and potential burnout risk among teachers.
+
+The system analyzes seven workplace and psychological dimensions and predicts a risk category: **Low, Moderate, or High**. It also provides wellness suggestions and helps teachers monitor their well-being over time.
 
 ---
 
 ## 📌 Project Overview
 
-Teacher burnout is a major global concern impacting teacher retention, pedagogical quality, and educator mental health. EduCare leverages empirical data from the **Teacher Burnout Dataset (Mendeley Data)** to provide:
-1. **Scientifically Grounded Risk Prediction**: Evaluates 7 core psychological constructs to classify burnout risk as **Low**, **Moderate**, or **High**.
-2. **Real-Time Intervention**: Recommends personalized, evidence-based coping mechanisms and micro-interventions.
-3. **Institutional Insight**: Aggregates school-wide metrics for academic administrators to identify high-stress departments and enact supportive workload policies.
+Teacher stress and burnout can affect teacher retention, teaching quality, and overall well-being.
+
+EduCare aims to address this problem through:
+
+1. **Risk Prediction:** Uses a trained Machine Learning model to estimate teacher well-being risk.
+2. **Personalized Support:** Provides wellness suggestions and practical coping strategies.
+3. **Progress Monitoring:** Allows teachers to review their previous check-ins.
+4. **Institutional Insights:** Provides aggregated information to help administrators understand workplace stress patterns.
 
 ---
 
-## 🔬 Psychological Framework & Core Constructs
+## 🔬 Psychological Framework and Core Features
 
-The Machine Learning model is trained on 7 validated psychological dimensions (scored on a 1.0 to 5.0 Likert scale from *Strongly Disagree* to *Strongly Agree*):
+The Machine Learning model uses seven input dimensions based on the Teacher Burnout Dataset.
+
+The inputs are measured on a 1–5 Likert scale.
 
 | Dimension | Feature Name | Description |
-| :--- | :--- | :--- |
-| **Job Insecurity** | `job_insecurity` | Concerns regarding contract renewal, position stability, or institutional restructuring. |
-| **Work Expectations** | `work_expectations` | Unrealistic workload pace, administrative pressure, and tight deadlines. |
-| **Workplace Relationships** | `relationships` | Interpersonal tension, collegial friction, or feeling isolated in the school role. |
-| **Role Ambiguity** | `role_ambiguity` | Unclear duties, conflicting directives, and uncertainty about responsibilities. |
-| **Role Overload** | `role_overload` | Excessive grading, lesson planning, extracurricular supervision, and meeting volume. |
-| **Organization Culture** | `organization_culture` | Institutional climate, top-down friction, and lack of teacher autonomy/voice. |
-| **Psychological Well-Being** | `psychological_wellbeing` | Feelings of mental exhaustion, chronic fatigue, stress headaches, and anxiety. |
+|---|---|---|
+| Job Insecurity | `job_insecurity` | Concerns about job stability and security. |
+| Work Expectations | `work_expectations` | Work pressure, deadlines, and expectations. |
+| Workplace Relationships | `relationships` | Interpersonal relationships and workplace support. |
+| Role Ambiguity | `role_ambiguity` | Unclear responsibilities and job expectations. |
+| Role Overload | `role_overload` | Excessive workload and responsibilities. |
+| Organization Culture | `organization_culture` | Workplace environment and organizational support. |
+| Psychological Well-Being | `psychological_wellbeing` | Psychological well-being-related responses. |
+
+### Prediction Categories
+
+- Low Risk
+- Moderate Risk
+- High Risk
 
 ---
 
-## 🛠️ System Architecture & Tech Stack
+## 🛠️ Technologies Used
+
+| Component | Technology |
+|---|---|
+| Programming Language | Python |
+| Backend | Flask |
+| Frontend | HTML5, Tailwind CSS, JavaScript |
+| Machine Learning | Scikit-learn |
+| Data Processing | Pandas |
+| Database | SQLite |
+| Data Visualization | Chart.js |
+| Model Serialization | Joblib |
+| Version Control | Git and GitHub |
+
+---
+
+## 🤖 Machine Learning Implementation
+
+EduCare uses **Logistic Regression** for multi-class risk classification.
+
+The machine learning pipeline includes:
+
+- Simple Imputer for handling missing values.
+- Standard Scaler for feature scaling.
+- Logistic Regression for classification.
+- Joblib for saving and loading the trained model.
+
+The trained model is stored in:
+
+`educare_model.pkl`
+
+---
+
+## 🚀 Key Modules and Features
+
+### 1. Dashboard
+
+- Displays teacher well-being information.
+- Shows the current predicted risk category.
+- Provides visual summaries and progress indicators.
+
+### 2. Daily Check-In
+
+- Allows teachers to submit daily responses.
+- Collects information across seven input dimensions.
+- Sends responses to the trained Machine Learning model.
+- Displays the predicted risk category.
+
+### 3. My History
+
+- Stores previous check-in records.
+- Allows teachers to review their prediction history.
+- Helps monitor changes over time.
+
+### 4. Wellness Hub
+
+- Provides breathing exercises.
+- Includes mindfulness activities.
+- Offers practical stress-management suggestions.
+- Encourages teachers to seek appropriate support.
+
+### 5. Notifications
+
+- Provides wellness reminders.
+- Displays relevant updates and notifications.
+
+### 6. Administrator Analytics
+
+- Displays aggregated teacher well-being information.
+- Helps identify general workplace stress patterns.
+- Provides visual reports and analytical insights.
+
+---
+
+## 📂 Project Structure
 
 ```text
 EduCare/
-├── app.py                      # Flask backend & REST APIs (/api/predict, /api/history, /api/login, /api/register)
-├── database.py                 # SQLite database schema, CRUD queries, migrations, and analytics aggregations
-├── educare.db                  # SQLite database storing predictions, teachers, and check-in logs
-├── educare_model.pkl           # Trained Scikit-Learn machine learning pipeline (StandardScaler + Balanced LogisticRegression)
-├── train_model.py              # ML model training script using Mendeley Teacher Burnout Dataset
-├── test_model.py               # ML model inference verification script
-├── test_educare.py             # Comprehensive automated test suite (Unit & Integration tests)
-├── requirements.txt            # Python dependencies
-├── Response sheet (educare) 3.xlsx # Mendeley Data Teacher Burnout dataset
-└── templates/
-    └── frontend_educare.html   # Single Page Application (Dashboard, Check-In, History, Wellness Hub, Notifications, Admin Analytics)
+│
+├── app.py
+├── database.py
+├── train_model.py
+├── test_model.py
+├── test_educare.py
+│
+├── educare_model.pkl
+├── educare.db
+├── requirements.txt
+├── README.md
+├── .gitignore
+│
+├── templates/
+│   └── frontend_educare.html
+│
+└── Response sheet (educare) 3.xlsx
 ```
 
-- **Backend**: Python 3, Flask, SQLite3, Pandas
-- **Machine Learning**: Scikit-Learn (SimpleImputer, StandardScaler, LogisticRegression with balanced class weights), Joblib
-- **Frontend**: HTML5, Tailwind CSS, Chart.js
-
 ---
 
-## 🚀 Key Modules & Features
+## ⚙️ Installation and Setup
 
-### 1. 🏠 Dashboard
-- Real-time metric cards: Overall Well-Being Score (0-100), Scaled Stress Level (1-10), Workload Index (1-10), and Current Risk Category badge.
-- Weekly Well-Being Trend chart powered by actual historical records.
-- Adaptive Status card providing instant encouraging feedback based on current risk.
+Follow these steps to run EduCare on your local system.
 
-### 2. 📝 Daily Check-In
-- Interactive Likert sliders for the 7 research constructs (1.0 = Strongly Disagree to 5.0 = Strongly Agree) with live verbal indicators.
-- Asynchronous submission (POST /api/predict) directly to the trained ML model.
-- **Results Modal**: Displays color-coded risk category, exact class probability breakdown (Low %, Moderate %, High %), primary stress contributor, and personalized action steps.
-- Instantly updates the Dashboard and History table without a full browser reload.
+### Step 1: Clone the Repository
 
-### 3. 📊 My History
-- Trajectory line chart tracking stress and workload across check-ins.
-- Historical check-in table with timestamp, department, scores, and risk badges.
-- **Record Details Modal**: Allows inspecting individual 1-5 construct scores and notes for any past check-in.
+```bash
+git clone https://github.com/grvx-dev/Educare-real-time-teacher-well-being-support-system.git
+```
 
-### 4. 🌿 Wellness Hub
-- **🌬️ Box Breathing Coach**: Interactive 4-4-4-4 cycle (Inhale 4s, Hold 4s, Exhale 4s, Hold 4s) with animated pulse and cycle counter.
-- **🧘 Mindful Reset Timer**: 2 min, 5 min, and 10 min focus presets with start, pause, and reset controls.
-- **📚 Practical Coping Strategies**: Categorized educator triage guides for grading batching, boundary setting, and collegial debriefing.
-- **🆘 Institutional Support**: Emergency helplines (Dial 988, Crisis Text Line 741741) and an interactive confidential counselor callback request form.
+### Step 2: Open the Project Folder
 
-### 5. 🔔 Notifications
-- Context-sensitive risk alerts (e.g. prompt to take a restorative break when stress is elevated).
-- Daily check-in reminders and institutional notices.
-- Mark all as read functionality.
+```bash
+cd Educare-real-time-teacher-well-being-support-system
+```
 
-### 6. 👨‍💼 Administrator Analytics
-- Aggregated school-wide indicators: Total teachers, active check-in rate, average stress, and average workload.
-- **Risk Distribution Chart**: Doughnut chart showing proportion of faculty in Low, Moderate, and High burnout risk.
-- **Department Overview**: Comparative bar chart evaluating stress and workload across Science, Math, Humanities, Arts, Languages, and Physical Ed.
-- **Workload vs. Stress Correlation Matrix**: Scatter plot visualizing check-in clusters.
-- **📥 One-Click CSV Export**: Downloads a comprehensive educare_wellbeing_report.csv report.
+### Step 3: Install Dependencies
 
----
-
-## ⚙️ Installation & Usage
-
-### 1. Install Dependencies
-`ash
+```bash
 pip install -r requirements.txt
-`
+```
 
-### 2. Run the Application
-`ash
+### Step 4: Run the Application
+
+```bash
 python app.py
-`
-Open your web browser and navigate to:
-`
+```
+
+### Step 5: Open the Application
+
+Open your browser and visit:
+
+```text
 http://127.0.0.1:5000
-`
+```
 
-### 3. Retrain the Machine Learning Model (Optional)
-`ash
-python train_model.py
-`
+---
 
-### 4. Run Automated Tests
-`ash
+## 🧪 Testing
+
+To run the automated test suite:
+
+```bash
 python -m unittest test_educare.py
-`
+```
+
+To verify the Machine Learning model:
+
+```bash
+python test_model.py
+```
+
+---
+
+## 🔮 Future Enhancements
+
+- Improve prediction performance through model experimentation.
+- Add more personalized wellness recommendations.
+- Enhance teacher progress visualization.
+- Improve administrator analytics.
+- Strengthen data privacy and security.
+- Deploy the application on a cloud platform.
+
+---
+
+## 🎯 Project Objective
+
+The main objective of EduCare is to develop a supportive digital platform that helps educational institutions understand teacher well-being and encourages a healthier working environment.
+
+**Disclaimer:** EduCare provides supportive risk estimates and wellness information. It is not a medical diagnostic tool and does not replace professional mental health support.
+
+---
+
+## 👩‍💻 Project Information
+
+| Details | Information |
+|---|---|
+| Project Name | EduCare |
+| Project Domain | Machine Learning and Web Development |
+| Backend | Python Flask |
+| Machine Learning Algorithm | Logistic Regression |
+| Database | SQLite |
+| Repository | GitHub |
+
+---
+**EduCare – Supporting Teacher Well-Being Through Machine Learning.**
