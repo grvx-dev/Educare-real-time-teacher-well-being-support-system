@@ -225,6 +225,7 @@ The main objective of EduCare is to develop a supportive digital platform that h
 | Machine Learning Algorithm | Logistic Regression |
 | Database | SQLite |
 | Repository | GitHub |
-
+ #Click here for live website
+ https://educare-real-time-teacher-well-being.onrender.com
 ---
 **EduCare – Supporting Teacher Well-Being Through Machine Learning.**
